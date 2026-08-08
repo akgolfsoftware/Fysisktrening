@@ -1,0 +1,103 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --color-background: #f4f1ea;
+  --color-foreground: #161b17;
+  --color-card: #fbfaf6;
+  --color-card-foreground: #161b17;
+  --color-muted: #e8e4db;
+  --color-muted-foreground: #5f675f;
+  --color-border: color-mix(in oklab, #161b17 12%, transparent);
+  --color-border-strong: color-mix(in oklab, #161b17 22%, transparent);
+  --color-primary: #1c5c42;
+  --color-primary-foreground: #f7faf7;
+  --color-accent: #dfe8e1;
+  --color-accent-foreground: #1c5c42;
+  --color-destructive: #a33b2d;
+  --color-destructive-foreground: #fff7f5;
+  --color-ring: #1c5c42;
+  --color-work: #1c5c42;
+  --color-rest: #3d5a80;
+  --color-strength: #6b4f3a;
+  --color-mobility: #4a6670;
+  --color-running: #1c5c42;
+
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 1.75rem;
+
+  --shadow-soft: 0 1px 2px color-mix(in oklab, #161b17 6%, transparent),
+    0 8px 24px color-mix(in oklab, #161b17 5%, transparent);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    height: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    min-height: 100%;
+    margin: 0;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .safe-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .app-max {
+    width: 100%;
+    max-width: 28rem;
+    margin-inline: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
