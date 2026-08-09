@@ -1,6 +1,14 @@
-# Intervall v2
+# Iron Mile
 
-Local-first interval and strength training app — running, strength, and mobility.
+Local-first training app for **strength**, **running intervals**, and **mobility**.
+
+**Tagline:** Styrke, intervaller og bevegelighet
+
+## Brand
+
+- **Name:** Iron Mile  
+- **Palette:** iron charcoal primary, stone ground, copper strength accent  
+- **Mark:** weight plates + mile marker (see `src/components/brand/IronMileMark.tsx`)
 
 ## Features
 
@@ -23,14 +31,14 @@ Local-first interval and strength training app — running, strength, and mobili
 
 ```bash
 npm install
-npm run dev        # http://localhost:8080
+npm run dev
 npm run typecheck
 npm run build
 ```
 
 ## Deploy
 
-Production build targets Vercel (`nitro` preset). Set `DATABASE_URL` if you use a remote Postgres for auth; otherwise PGLite is used in-browser/server fallback.
+Production build targets Vercel (`nitro` preset).
 
 ## License
 
