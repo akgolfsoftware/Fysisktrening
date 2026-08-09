@@ -31,14 +31,14 @@ Local-first training app for **strength**, **running intervals**, and **mobility
 
 ```bash
 npm install
-npm run dev
+npm run dev        # http://localhost:8080
 npm run typecheck
 npm run build
 ```
 
 ## Deploy
 
-Production build targets Vercel (`nitro` preset).
+Production build targets Vercel (`nitro` preset). Set `DATABASE_URL` if you use a remote Postgres for auth; otherwise PGLite is used as fallback.
 
 ## License
 

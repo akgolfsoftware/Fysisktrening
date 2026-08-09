@@ -2,12 +2,12 @@ import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-r
 import { Toaster } from "sonner";
 import { CreatedWithGrokBanner } from "@/components/created-with-grok-banner";
 import { AuthProvider } from "@/lib/auth/provider";
+import { BRAND } from "@/lib/brand";
 import appCss from "../styles.css?url";
 
-const APP_NAME = "Intervall";
 const host = import.meta.env.VITE_PUBLIC_HOSTNAME;
 const ogImage = host
-  ? `https://og.grok.me/v1/card.png?host=${encodeURIComponent(host)}&title=${encodeURIComponent(APP_NAME)}`
+  ? `https://og.grok.me/v1/card.png?host=${encodeURIComponent(host)}&title=${encodeURIComponent(BRAND.name)}`
   : undefined;
 
 export const Route = createRootRoute({
@@ -18,17 +18,16 @@ export const Route = createRootRoute({
         name: "viewport",
         content: "width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover",
       },
-      { title: APP_NAME },
-      {
-        name: "description",
-        content:
-          "Intervall, styrke og bevegelighet — timer, historikk og Olympiatoppen-pulssoner",
-      },
-      { name: "apple-mobile-web-app-title", content: APP_NAME },
-      { name: "theme-color", content: "#f4f1ea" },
+      { title: BRAND.name },
+      { name: "description", content: BRAND.description },
+      { name: "apple-mobile-web-app-title", content: BRAND.name },
+      { name: "application-name", content: BRAND.name },
+      { name: "theme-color", content: BRAND.themeColor },
       { name: "mobile-web-app-capable", content: "yes" },
       ...(ogImage
         ? [
+            { property: "og:title", content: BRAND.name },
+            { property: "og:description", content: BRAND.description },
             { property: "og:image", content: ogImage },
             { property: "og:image:width", content: "1200" },
             { property: "og:image:height", content: "630" },
@@ -52,8 +51,8 @@ function RootDocument() {
         <HeadContent />
       </head>
       <body className="min-h-dvh bg-background text-foreground antialiased">
-        <CreatedWithGrokBanner />
         <AuthProvider>
+          <CreatedWithGrokBanner />
           <Outlet />
           <Toaster position="top-center" richColors closeButton />
         </AuthProvider>

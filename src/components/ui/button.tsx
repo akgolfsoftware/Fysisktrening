@@ -4,22 +4,28 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[0.98]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-[15px] font-semibold transition-[background-color,opacity,transform] duration-[var(--dur)] ease-[var(--ease-out)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[0.99]",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default:
+          "bg-primary text-primary-foreground hover:bg-primary-pressed active:bg-primary-pressed",
+        strength:
+          "bg-strength text-primary-foreground hover:bg-strength/90 active:bg-strength/90",
         secondary: "bg-muted text-foreground hover:bg-muted/80",
-        outline: "border border-border bg-card text-foreground hover:bg-muted",
-        ghost: "hover:bg-muted text-foreground",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline:
+          "border border-border-strong bg-transparent text-primary hover:bg-muted/60",
+        ghost: "text-primary hover:bg-muted/60",
+        destructive:
+          "border border-destructive/40 bg-transparent text-destructive hover:bg-destructive/10",
+        link: "text-muted-foreground underline-offset-4 hover:text-foreground",
       },
       size: {
-        default: "h-11 px-4",
-        sm: "h-9 rounded-md px-3 text-xs",
-        lg: "h-12 rounded-xl px-5 text-base",
-        icon: "size-11",
-        "icon-sm": "size-9",
+        default: "min-h-11 px-[18px] py-3",
+        sm: "min-h-9 rounded-[10px] px-3.5 text-[13px]",
+        lg: "min-h-14 rounded-[14px] px-6 text-base",
+        icon: "size-12 rounded-xl",
+        "icon-sm": "size-9 rounded-[9px]",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

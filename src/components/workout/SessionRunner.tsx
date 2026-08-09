@@ -1,10 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Pause, Play, SkipForward, X } from "lucide-react";
+import { Minus, Pause, Play, Plus, SkipForward } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ENV_LABEL, SPORT_LABEL, formatMmSs, formatSpeed } from "@/lib/intervall/format";
 import { playBeep } from "@/lib/intervall/sound";
 import { useIntervallStore } from "@/lib/intervall/store";
@@ -20,6 +17,7 @@ export function SessionRunner({ sessionId }: { sessionId: string }) {
   const completeSession = useIntervallStore((s) => s.completeSession);
   const abortSession = useIntervallStore((s) => s.abortSession);
   const logSet = useIntervallStore((s) => s.logSet);
+  const weightStep = settings.weightStepKg;
 
   const session = useMemo(
     () => sessions.find((x) => x.id === sessionId),
@@ -27,23 +25,22 @@ export function SessionRunner({ sessionId }: { sessionId: string }) {
   );
 
   const [paused, setPaused] = useState(false);
-  const [actualReps, setActualReps] = useState<string>("");
-  const [actualWeight, setActualWeight] = useState<string>("");
+  const [actualReps, setActualReps] = useState(0);
+  const [actualWeight, setActualWeight] = useState(0);
   const tickRef = useRef<number | null>(null);
 
   const phase = session?.phases[session.phaseIndex];
   const progress = useMemo(() => {
     if (!session || !phase) return 0;
-    if (phase.manual) return 0;
+    if (phase.manual) return phase.setTotal > 0 ? phase.setIndex / phase.setTotal : 0.08;
     if (phase.durationSec <= 0) return 1;
     return 1 - session.remainingSec / phase.durationSec;
   }, [session, phase]);
 
-  // Sync editable fields when phase changes
   useEffect(() => {
     if (!phase) return;
-    setActualReps(phase.targetReps != null ? String(phase.targetReps) : "");
-    setActualWeight(phase.targetWeightKg != null ? String(phase.targetWeightKg) : "");
+    setActualReps(phase.targetReps ?? 0);
+    setActualWeight(phase.targetWeightKg ?? 0);
   }, [phase?.id]);
 
   useEffect(() => {
@@ -77,8 +74,8 @@ export function SessionRunner({ sessionId }: { sessionId: string }) {
       const p = s.phases[s.phaseIndex];
       if (p) {
         logSet(s.id, p.id, {
-          weightKg: actualWeight ? Number(actualWeight) : p.targetWeightKg,
-          reps: actualReps ? Number(actualReps) : p.targetReps,
+          weightKg: actualWeight || p.targetWeightKg,
+          reps: actualReps || p.targetReps,
         });
       }
     }
@@ -105,7 +102,7 @@ export function SessionRunner({ sessionId }: { sessionId: string }) {
   if (!session || !phase) {
     return (
       <div className="space-y-4 py-12 text-center">
-        <p className="text-muted-foreground">Fant ikke økten.</p>
+        <p className="font-display text-xl">Fant ikke økten.</p>
         <Button onClick={() => navigate({ to: "/" })}>Tilbake</Button>
       </div>
     );
@@ -114,6 +111,7 @@ export function SessionRunner({ sessionId }: { sessionId: string }) {
   if (session.status === "completed") {
     return (
       <div className="space-y-4 py-8 text-center">
+        <p className="label-caps text-strength">Fullført</p>
         <h1 className="font-display text-3xl">Økt fullført</h1>
         <p className="text-muted-foreground">{session.templateName}</p>
         <Button onClick={() => navigate({ to: "/history/$id", params: { id: session.id } })}>
@@ -129,173 +127,239 @@ export function SessionRunner({ sessionId }: { sessionId: string }) {
     : session.sport === "strength"
       ? "stroke-strength"
       : "stroke-work";
+  const sportTone =
+    session.sport === "strength"
+      ? "text-strength"
+      : session.sport === "mobility"
+        ? "text-mobility"
+        : "text-running";
+
+  const r = 112;
+  const c = 2 * Math.PI * r;
+  const offset = c * (1 - Math.min(1, Math.max(0, progress)));
 
   return (
-    <div className="flex min-h-[70dvh] flex-col gap-6">
-      <header className="flex items-start justify-between gap-3">
+    <div className="flex min-h-[75dvh] flex-col">
+      <header className="flex items-start justify-between gap-3 px-1 pt-1">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <p className={cn("label-caps", sportTone)}>
             {SPORT_LABEL[session.sport]} · {ENV_LABEL[session.environment]}
           </p>
-          <h1 className="font-display text-2xl font-medium">{session.templateName}</h1>
+          <h1 className="mt-1 font-display text-[22px] leading-tight">{session.templateName}</h1>
         </div>
-        <Button
+        <button
           type="button"
-          size="icon"
-          variant="ghost"
-          aria-label="Avbryt økt"
+          className="min-h-11 text-[13.5px] text-destructive"
           onClick={() => {
             abortSession(session.id);
             void navigate({ to: "/" });
           }}
         >
-          <X />
-        </Button>
+          Avbryt
+        </button>
       </header>
 
-      <div className="relative mx-auto grid size-64 place-items-center">
-        <svg viewBox="0 0 120 120" className="absolute inset-0 size-full -rotate-90">
-          <circle
-            cx="60"
-            cy="60"
-            r="52"
-            fill="none"
-            className="stroke-muted"
-            strokeWidth="8"
-          />
-          <circle
-            cx="60"
-            cy="60"
-            r="52"
-            fill="none"
-            className={cn(ringColor, "transition-[stroke-dashoffset] duration-300")}
-            strokeWidth="8"
-            strokeLinecap="round"
-            strokeDasharray={2 * Math.PI * 52}
-            strokeDashoffset={2 * Math.PI * 52 * (1 - (phase.manual ? 0.08 : progress))}
-          />
-        </svg>
-        <div className="z-10 text-center">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {phase.label}
-            {phase.setTotal > 1 ? ` · ${phase.setIndex}/${phase.setTotal}` : ""}
+      <div className="flex flex-1 flex-col items-center justify-center gap-5 py-4">
+        <div className="relative size-[250px]">
+          <svg viewBox="0 0 250 250" className="size-full -rotate-90">
+            <circle
+              cx="125"
+              cy="125"
+              r={r}
+              fill="none"
+              className="stroke-muted"
+              strokeWidth="12"
+            />
+            <circle
+              cx="125"
+              cy="125"
+              r={r}
+              fill="none"
+              className={cn(ringColor, "transition-[stroke-dashoffset] duration-300")}
+              strokeWidth="12"
+              strokeLinecap="round"
+              strokeDasharray={c}
+              strokeDashoffset={offset}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
+            <p
+              className={cn(
+                "label-caps",
+                isRest ? "text-rest" : "text-muted-foreground",
+              )}
+            >
+              {isRest ? "Pause" : phase.label === "Pause" ? "Pause" : "Arbeid"}
+            </p>
+            {phase.manual ? (
+              <p className="font-display text-[58px] leading-none tabular tracking-tight">
+                {phase.targetReps ?? "—"}{" "}
+                <span className="text-[30px] text-muted-foreground">reps</span>
+              </p>
+            ) : (
+              <p className="font-display text-[64px] leading-none tabular tracking-tight">
+                {formatMmSs(session.remainingSec)}
+              </p>
+            )}
+            <p className="text-[13.5px] tabular text-muted-foreground">
+              {phase.setTotal > 1
+                ? `${session.sport === "strength" ? "Sett" : "Drag"} ${phase.setIndex} av ${phase.setTotal}`
+                : `Fase ${session.phaseIndex + 1} av ${session.phases.length}`}
+            </p>
+          </div>
+        </div>
+
+        <div className="text-center">
+          {phase.exerciseName && (
+            <p className="text-lg font-semibold">{phase.exerciseName}</p>
+          )}
+          <p className="mt-1 text-[13px] tabular text-muted-foreground">
+            {[
+              phase.targetWeightKg != null && phase.targetWeightKg > 0
+                ? `Mål ${phase.targetWeightKg} kg`
+                : null,
+              phase.targetRpe != null ? `RPE ${phase.targetRpe}` : null,
+              phase.targetSpeedKmh != null
+                ? formatSpeed(phase.targetSpeedKmh, settings.speedUnit)
+                : null,
+              phase.targetZone != null
+                ? `Sone ${phase.targetZone} · ${ZONE_META[phase.targetZone].name}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           </p>
-          {phase.manual ? (
-            <p className="font-display text-4xl font-medium tabular">
-              {phase.targetReps ?? "—"}
-              <span className="ml-1 text-lg text-muted-foreground">reps</span>
-            </p>
-          ) : (
-            <p className="font-display text-5xl font-medium tabular tracking-tight">
-              {formatMmSs(session.remainingSec)}
-            </p>
+          {phase.notes && (
+            <p className="mt-1 text-xs text-muted-foreground">{phase.notes}</p>
           )}
         </div>
+
+        {!phase.manual && phase.targetZone && (
+          <div className="flex gap-2">
+            <span className="rounded-full border border-running/35 px-3 py-1.5 text-[12.5px] text-running">
+              Neste: sone {phase.targetZone}
+            </span>
+            {phase.targetSpeedKmh != null && (
+              <span className="rounded-full border border-border px-3 py-1.5 text-[12.5px] tabular text-muted-foreground">
+                {formatSpeed(phase.targetSpeedKmh, settings.speedUnit)}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      <Card
-        className={cn(
-          "border-0",
-          isRest ? "bg-rest/10" : session.sport === "strength" ? "bg-strength/10" : "bg-work/10",
-        )}
-      >
-        <CardContent className="space-y-1 py-4 text-center">
-          {phase.exerciseName && (
-            <p className="font-display text-xl">{phase.exerciseName}</p>
-          )}
-          {phase.targetWeightKg != null && phase.targetWeightKg > 0 && (
-            <p className="text-sm text-muted-foreground">{phase.targetWeightKg} kg</p>
-          )}
-          {phase.targetRpe != null && (
-            <p className="text-sm text-muted-foreground">Mål-RPE {phase.targetRpe}</p>
-          )}
-          {phase.notes && (
-            <p className="text-xs text-muted-foreground">{phase.notes}</p>
-          )}
-          {phase.targetSpeedKmh != null && (
-            <p className="text-sm text-muted-foreground">
-              Mål: {formatSpeed(phase.targetSpeedKmh, settings.speedUnit)}
-            </p>
-          )}
-          {phase.targetZone && (
-            <p className="text-sm text-muted-foreground">
-              Sone {phase.targetZone} · {ZONE_META[phase.targetZone].name}
-            </p>
-          )}
-          <p className="text-xs text-muted-foreground">
-            Fase {session.phaseIndex + 1} av {session.phases.length}
-          </p>
-        </CardContent>
-      </Card>
-
-      {phase.manual && (
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="actual-reps" className="text-xs">
-              Faktiske reps
-            </Label>
-            <Input
-              id="actual-reps"
-              type="number"
-              min={0}
-              className="text-center"
-              value={actualReps}
-              onChange={(e) => setActualReps(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="actual-kg" className="text-xs">
-              Faktisk vekt (kg)
-            </Label>
-            <Input
-              id="actual-kg"
-              type="number"
-              min={0}
-              step={0.5}
-              className="text-center"
+      <div className="space-y-3 pb-2">
+        {phase.manual && (
+          <div className="flex gap-2.5">
+            <StepperField
+              label="Vekt (kg)"
               value={actualWeight}
-              onChange={(e) => setActualWeight(e.target.value)}
+              step={weightStep}
+              onChange={setActualWeight}
+            />
+            <StepperField
+              label="Reps"
+              value={actualReps}
+              step={1}
+              onChange={setActualReps}
             />
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="mt-auto flex flex-col gap-3">
         {phase.manual ? (
-          <Button
-            size="lg"
-            className="h-14 w-full text-base"
-            onClick={() => {
-              if (settings.soundEnabled) playBeep("phase");
-              advance(session, true);
-            }}
-          >
-            Fullfør sett
-          </Button>
-        ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <>
             <Button
               size="lg"
-              variant="secondary"
-              className="h-14"
+              className="w-full rounded-[14px]"
+              onClick={() => {
+                if (settings.soundEnabled) playBeep("phase");
+                advance(session, true);
+              }}
+            >
+              Sett fullført
+            </Button>
+            <div className="flex gap-2.5">
+              <Button variant="outline" className="min-h-12 flex-1 rounded-[14px]" disabled>
+                Pause {formatMmSs(
+                  session.phases[session.phaseIndex + 1]?.kind === "rest"
+                    ? session.phases[session.phaseIndex + 1]!.durationSec
+                    : 0,
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                className="min-h-12 flex-1 rounded-[14px]"
+                onClick={() => {
+                  if (settings.soundEnabled) playBeep("phase");
+                  advance(session, true);
+                }}
+              >
+                Hopp over
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="flex gap-2.5">
+            <Button
+              size="lg"
+              className="min-h-14 flex-[2] rounded-[14px]"
               onClick={() => setPaused((p) => !p)}
             >
               {paused ? <Play className="fill-current" /> : <Pause />}
-              {paused ? "Fortsett" : "Pause"}
+              {paused ? "Fortsett" : "Pause økt"}
             </Button>
             <Button
-              size="lg"
               variant="outline"
-              className="h-14"
+              size="lg"
+              className="min-h-14 flex-1 rounded-[14px]"
               onClick={() => {
                 if (settings.soundEnabled) playBeep("phase");
                 advance(session);
               }}
             >
-              <SkipForward /> Hopp over
+              <SkipForward className="size-4" /> Neste
             </Button>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function StepperField({
+  label,
+  value,
+  step,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  step: number;
+  onChange: (n: number) => void;
+}) {
+  return (
+    <div className="flex flex-1 flex-col gap-2 rounded-[14px] border border-border bg-card p-2.5 px-3">
+      <span className="text-[11px] text-muted-foreground">{label}</span>
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          className="flex size-[34px] items-center justify-center rounded-[9px] bg-muted text-primary"
+          onClick={() => onChange(Math.max(0, Math.round((value - step) * 10) / 10))}
+          aria-label={`Mindre ${label}`}
+        >
+          <Minus className="size-4" />
+        </button>
+        <span className="font-display text-2xl tabular leading-none">
+          {Number.isInteger(value) ? value : value.toFixed(1).replace(".", ",")}
+        </span>
+        <button
+          type="button"
+          className="flex size-[34px] items-center justify-center rounded-[9px] bg-muted text-primary"
+          onClick={() => onChange(Math.round((value + step) * 10) / 10)}
+          aria-label={`Mer ${label}`}
+        >
+          <Plus className="size-4" />
+        </button>
       </div>
     </div>
   );

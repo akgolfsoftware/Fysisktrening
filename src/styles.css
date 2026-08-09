@@ -1,41 +1,48 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Iron Mile design system — from AK Golf redesign (Iron Mile.dc.html) */
 @theme {
   --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  --color-background: #f4f1ea;
-  --color-foreground: #161b17;
-  --color-card: #fbfaf6;
-  --color-card-foreground: #161b17;
-  --color-muted: #e8e4db;
-  --color-muted-foreground: #5f675f;
-  --color-border: color-mix(in oklab, #161b17 12%, transparent);
-  --color-border-strong: color-mix(in oklab, #161b17 22%, transparent);
-  --color-primary: #1c5c42;
-  --color-primary-foreground: #f7faf7;
-  --color-accent: #dfe8e1;
-  --color-accent-foreground: #1c5c42;
+  --color-background: #efece6;
+  --color-foreground: #14171a;
+  --color-card: #f7f5f1;
+  --color-card-foreground: #14171a;
+  --color-muted: #e2ddd4;
+  --color-muted-foreground: #5a5f5c;
+  --color-border: color-mix(in oklab, #2a3136 12%, transparent);
+  --color-border-strong: color-mix(in oklab, #2a3136 22%, transparent);
+  --color-primary: #2a3136;
+  --color-primary-foreground: #f4f2ed;
+  --color-primary-pressed: #1c2226;
+  --color-accent: #e2ddd4;
+  --color-accent-foreground: #2a3136;
   --color-destructive: #a33b2d;
   --color-destructive-foreground: #fff7f5;
-  --color-ring: #1c5c42;
-  --color-work: #1c5c42;
-  --color-rest: #3d5a80;
-  --color-strength: #6b4f3a;
-  --color-mobility: #4a6670;
-  --color-running: #1c5c42;
+  --color-ring: #8f4f38;
+  --color-work: #2a3136;
+  --color-rest: #4a5c6a;
+  --color-strength: #8f4f38;
+  --color-mobility: #5a6b64;
+  --color-running: #2f4a3e;
+  --color-iron: #2a3136;
+  --color-copper: #8f4f38;
 
   --radius-xs: 0.25rem;
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
-  --radius-2xl: 1.75rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
 
-  --shadow-soft: 0 1px 2px color-mix(in oklab, #161b17 6%, transparent),
-    0 8px 24px color-mix(in oklab, #161b17 5%, transparent);
+  --shadow-soft: 0 2px 3px rgba(20, 23, 26, 0.03), 0 8px 20px rgba(20, 23, 26, 0.05);
+  --shadow-nav: 0 -1px 0 rgba(42, 49, 54, 0.08);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur: 160ms;
 }
 
 @layer base {
@@ -69,12 +76,17 @@
   select {
     font: inherit;
   }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
 }
 
 @layer utilities {
   .font-display {
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.015em;
   }
 
   .tabular {
@@ -89,6 +101,24 @@
     width: 100%;
     max-width: 28rem;
     margin-inline: auto;
+  }
+
+  .label-caps {
+    font-size: 0.625rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .iron-hero {
+    background:
+      radial-gradient(120% 90% at 8% 110%, color-mix(in oklab, var(--color-copper) 18%, transparent), transparent 60%),
+      radial-gradient(100% 80% at 100% -10%, color-mix(in oklab, var(--color-primary) 14%, transparent), transparent 60%);
+  }
+
+  .nav-blur {
+    background: color-mix(in oklab, var(--color-card) 94%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 }
 

@@ -1,12 +1,16 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Plus, Sparkles } from "lucide-react";
 import { useMemo } from "react";
+import { IronMileMark } from "@/components/brand/IronMileMark";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Segmented } from "@/components/ui/segmented";
 import { TemplateCard } from "@/components/workout/TemplateCard";
-import { SPORT_LABEL } from "@/lib/intervall/format";
+import { BRAND } from "@/lib/brand";
+import {
+  countDrags,
+  formatDurationLong,
+  totalTemplateSeconds,
+} from "@/lib/intervall/format";
 import { useIntervallStore } from "@/lib/intervall/store";
 
 export const Route = createFileRoute("/")({ component: HomePage });
@@ -55,83 +59,79 @@ function HomePage() {
     );
   }, [templates, completed]);
 
+  const recMeta = useMemo(() => {
+    if (!recommendation) return "";
+    const drags = countDrags(recommendation.series);
+    const total = totalTemplateSeconds(recommendation.series, recommendation.sport);
+    if (recommendation.sport === "strength") {
+      return `${recommendation.series.length} øvelser · ${drags} sett · ca. ${formatDurationLong(total)}`;
+    }
+    return `${drags} drag · ca. ${formatDurationLong(total)}`;
+  }, [recommendation]);
+
+  const daysSince = useMemo(() => {
+    if (!completed[0]?.completedAt) return null;
+    return Math.max(
+      0,
+      Math.floor((Date.now() - completed[0].completedAt) / (24 * 3600 * 1000)),
+    );
+  }, [completed]);
+
   return (
     <AppShell active="home">
-      <div className="space-y-6">
-        <header className="space-y-3">
-          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
-            <div className="relative aspect-[16/9] bg-gradient-to-br from-primary/20 via-background to-strength/15">
-              <div className="absolute inset-0 flex flex-col justify-end p-5">
-                <div className="flex items-center gap-2 text-primary">
-                  <LogoMark />
-                  <span className="font-display text-3xl font-medium text-foreground">
-                    Intervall
-                  </span>
-                </div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Løping, styrke og bevegelighet — klart for økt
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-3">
+      <div className="space-y-3.5">
+        {/* Hero — design 1b */}
+        <div className="iron-hero -mx-4 space-y-3.5 px-5 pb-4 pt-2">
+          <IronMileMark withWordmark size="md" />
+          <div className="flex items-end justify-between gap-3">
             <div>
-              <h1 className="font-display text-2xl font-medium">Dine økter</h1>
-              <p className="text-sm text-muted-foreground">
+              <h1 className="font-display text-[27px] leading-tight">Dine økter</h1>
+              <p className="text-[12.5px] tabular text-muted-foreground">
                 {templates.length} maler · {completed.length} fullført
               </p>
             </div>
-            <Button asChild size="sm">
-              <Link to="/templates/new">
-                <Plus /> Ny økt
-              </Link>
+            <Button asChild size="sm" className="shrink-0 rounded-xl px-[18px]">
+              <Link to="/templates/new">Ny økt</Link>
             </Button>
           </div>
-        </header>
+        </div>
 
         {active && (
-          <Card className="border-primary/30 bg-primary/5">
-            <CardContent className="flex items-center justify-between gap-3 py-4">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-primary">
-                  Pågående økt
-                </p>
-                <p className="font-display text-lg">{active.templateName}</p>
-              </div>
-              <Button asChild size="sm">
+          <div className="rounded-[20px] border border-primary/25 bg-card p-4 shadow-[var(--shadow-soft)]">
+            <p className="label-caps text-primary">Pågående økt</p>
+            <div className="mt-2 flex items-end justify-between gap-3">
+              <p className="font-display text-[21px] leading-snug">{active.templateName}</p>
+              <Button asChild size="sm" className="shrink-0">
                 <Link to="/session/$id" params={{ id: active.id }}>
                   Fortsett
                 </Link>
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
-        {recommendation && (
-          <Card>
-            <CardContent className="flex items-start gap-3 py-4">
-              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground">
-                <Sparkles className="size-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Anbefaling
+        {recommendation && !active && (
+          <div className="rounded-[20px] border border-strength/30 bg-card p-4 shadow-[var(--shadow-soft)]">
+            <div className="flex items-center justify-between gap-2">
+              <p className="label-caps text-strength">Anbefalt i dag</p>
+              {daysSince != null && (
+                <p className="text-[11.5px] tabular text-muted-foreground">
+                  sist: {daysSince === 0 ? "i dag" : `${daysSince} dager siden`}
                 </p>
-                <p className="font-display text-lg leading-snug">{recommendation.name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {completed[0]
-                    ? `Etter ${SPORT_LABEL[completed[0].sport].toLowerCase()} — prøv ${SPORT_LABEL[recommendation.sport].toLowerCase()}`
-                    : "Start med en bevist mal fra startpakken"}
-                </p>
-                <Button asChild size="sm" className="mt-3">
-                  <Link to="/templates/$id/start" params={{ id: recommendation.id }}>
-                    Start
-                  </Link>
-                </Button>
+              )}
+            </div>
+            <div className="mt-3 flex items-end justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-display text-[21px] leading-snug">{recommendation.name}</p>
+                <p className="mt-1 text-[12.5px] tabular text-muted-foreground">{recMeta}</p>
               </div>
-            </CardContent>
-          </Card>
+              <Button asChild variant="strength" size="sm" className="shrink-0 rounded-xl px-5">
+                <Link to="/templates/$id/start" params={{ id: recommendation.id }}>
+                  Start
+                </Link>
+              </Button>
+            </div>
+          </div>
         )}
 
         <Segmented
@@ -145,47 +145,21 @@ function HomePage() {
           ]}
         />
 
-        <div className="space-y-3">
-          {filtered.length === 0 ? (
-            <EmptyWorkouts />
-          ) : (
-            filtered.map((t) => <TemplateCard key={t.id} template={t} />)
+        <div className="space-y-2.5">
+          {filtered.map((t) => (
+            <TemplateCard key={t.id} template={t} />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded-[22px] border border-border bg-background px-6 py-10 text-center">
+              <p className="font-display text-xl">Ingen maler her</p>
+              <p className="mt-2 text-[13.5px] text-muted-foreground">
+                Bytt filter eller lag en ny økt.
+              </p>
+              <p className="mt-1 text-[11px] text-muted-foreground">{BRAND.name}</p>
+            </div>
           )}
         </div>
       </div>
     </AppShell>
-  );
-}
-
-function EmptyWorkouts() {
-  return (
-    <Card>
-      <CardContent className="space-y-3 py-10 text-center">
-        <p className="font-display text-xl">Ingen økter her ennå</p>
-        <p className="text-sm text-muted-foreground">
-          Lag din første mal, eller bytt filter for å se startpakken.
-        </p>
-        <Button asChild>
-          <Link to="/templates/new">
-            <Plus /> Ny økt
-          </Link>
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
-function LogoMark() {
-  return (
-    <svg viewBox="0 0 48 48" fill="none" className="size-8" role="img" aria-label="Intervall">
-      <path d="M35.8 8.6l3 3" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" />
-      <circle cx="24" cy="26" r="16" stroke="currentColor" strokeWidth="3.4" />
-      <path
-        d="M17 32.5V22M22.3 34V17M27.7 34V17M33 32.5V22"
-        stroke="currentColor"
-        strokeWidth="3.4"
-        strokeLinecap="round"
-      />
-    </svg>
   );
 }

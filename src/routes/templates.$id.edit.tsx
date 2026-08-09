@@ -1,5 +1,4 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
 import { useMemo } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
@@ -15,25 +14,29 @@ function EditTemplatePage() {
 
   if (!template) {
     return (
-      <AppShell active="home">
-        <p className="text-muted-foreground">Fant ikke malen.</p>
-        <Button asChild className="mt-4">
-          <Link to="/">Tilbake</Link>
-        </Button>
+      <AppShell active="home" hideNav>
+        <div className="space-y-4 py-8 text-center">
+          <p className="font-display text-xl">Fant ikke malen.</p>
+          <Button asChild variant="outline">
+            <Link to="/">← Økter</Link>
+          </Button>
+        </div>
       </AppShell>
     );
   }
 
   return (
-    <AppShell active="home">
-      <div className="space-y-6">
-        <header className="flex items-center gap-3">
-          <Button asChild size="icon" variant="ghost" aria-label="Tilbake">
-            <Link to="/">
-              <ArrowLeft />
-            </Link>
-          </Button>
-          <h1 className="font-display text-2xl font-medium">Rediger økt</h1>
+    <AppShell active="home" hideNav>
+      <div className="space-y-4">
+        <header className="grid grid-cols-[1fr_auto_1fr] items-center">
+          <Link
+            to="/"
+            className="inline-flex min-h-11 items-center text-sm text-muted-foreground"
+          >
+            ← Tilbake
+          </Link>
+          <h1 className="font-display text-[19px]">Rediger mal</h1>
+          <span />
         </header>
         <TemplateForm initial={template} />
       </div>

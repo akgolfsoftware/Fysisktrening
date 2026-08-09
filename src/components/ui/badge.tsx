@@ -1,27 +1,41 @@
-import * as React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
-const badgeVariants = cva(
-  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary/10 text-primary",
-        secondary: "bg-muted text-muted-foreground",
-        running: "bg-running/10 text-running",
-        strength: "bg-strength/10 text-strength",
-        mobility: "bg-mobility/10 text-mobility",
-      },
-    },
-    defaultVariants: { variant: "default" },
-  },
-);
+const sportTone: Record<string, string> = {
+  running: "border-running text-running",
+  strength: "border-strength text-strength",
+  mobility: "border-mobility text-mobility",
+};
 
 export function Badge({
   className,
-  variant,
+  children,
   ...props
-}: React.ComponentProps<"span"> & VariantProps<typeof badgeVariants>) {
-  return <span className={cn(badgeVariants({ variant }), className)} {...props} />;
+}: React.ComponentProps<"span">) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.08em]",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </span>
+  );
+}
+
+export function SportBadge({
+  sport,
+  label,
+  className,
+}: {
+  sport: string;
+  label: string;
+  className?: string;
+}) {
+  return (
+    <Badge className={cn(sportTone[sport] ?? "border-primary text-primary", className)}>
+      {label}
+    </Badge>
+  );
 }

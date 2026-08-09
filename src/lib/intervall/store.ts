@@ -270,7 +270,7 @@ export const useIntervallStore = create<State>()(
         }),
     }),
     {
-      name: "intervall-v2",
+      name: "iron-mile",
       partialize: (s) => ({
         templates: s.templates,
         sessions: s.sessions,

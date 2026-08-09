@@ -37,3 +37,8 @@ AGENTS.md
 # Test / coverage
 coverage/
 *.lcov
+
+# local uploads
+attachments/
+screenshots/
+artifacts/

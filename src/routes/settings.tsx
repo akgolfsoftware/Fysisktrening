@@ -1,17 +1,27 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { IronMileMark } from "@/components/brand/IronMileMark";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Segmented } from "@/components/ui/segmented";
 import { Switch } from "@/components/ui/switch";
 import { SignedIn, SignedOut, UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { BRAND } from "@/lib/brand";
 import { useIntervallStore } from "@/lib/intervall/store";
 import { OLYMPIATOPPEN_ZONE_LOW, ZONE_META, zoneRange } from "@/lib/intervall/zones";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/settings")({ component: SettingsPage });
+
+const zoneBarColor: Record<1 | 2 | 3 | 4 | 5, string> = {
+  1: "bg-mobility",
+  2: "bg-running",
+  3: "bg-rest",
+  4: "bg-strength",
+  5: "bg-destructive",
+};
 
 function SettingsPage() {
   const settings = useIntervallStore((s) => s.settings);
@@ -25,222 +35,215 @@ function SettingsPage() {
 
   return (
     <AppShell active="settings">
-      <div className="space-y-6">
-        <header>
-          <h1 className="font-display text-3xl font-medium">Innstillinger</h1>
-          <p className="text-sm text-muted-foreground">Puls, enheter, styrke og lyd</p>
-        </header>
+      <div className="space-y-3.5">
+        <h1 className="font-display text-[28px] leading-tight">Innstillinger</h1>
 
-        <Card>
-          <CardContent className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="maxhr">Makspuls</Label>
-              <Input
-                id="maxhr"
-                type="number"
-                inputMode="numeric"
-                min={100}
-                max={230}
-                value={settings.maxHr}
-                onChange={(e) =>
-                  updateSettings({
-                    maxHr: Math.min(230, Math.max(100, Number(e.target.value) || 190)),
-                  })
-                }
-              />
-              <p className="text-xs text-muted-foreground">
-                Brukes til å beregne pulssonene under.
-              </p>
+        <div className="flex items-center gap-3 rounded-[18px] bg-primary p-4">
+          <IronMileMark size="md" />
+          <div className="min-w-0">
+            <p className="font-display text-xl text-primary-foreground">{BRAND.name}</p>
+            <p className="text-[11.5px] text-primary-foreground/65">
+              {BRAND.tagline} · v1.0
+            </p>
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-[18px] border border-border bg-card px-4">
+          <Row label="Makspuls">
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={100}
+              max={230}
+              className="h-9 w-20 border-0 bg-transparent px-0 text-right text-[13.5px] tabular text-muted-foreground shadow-none focus-visible:outline-none"
+              value={settings.maxHr}
+              onChange={(e) =>
+                updateSettings({
+                  maxHr: Math.min(230, Math.max(100, Number(e.target.value) || 190)),
+                })
+              }
+            />
+          </Row>
+          <Row label="Fartsenhet">
+            <Segmented
+              className="w-[9.5rem]"
+              value={settings.speedUnit}
+              onChange={(speedUnit) => updateSettings({ speedUnit })}
+              options={[
+                { value: "kmh", label: "km/t" },
+                { value: "pace", label: "pace" },
+              ]}
+            />
+          </Row>
+          <Row label="Lyd under økt">
+            <Switch
+              checked={settings.soundEnabled}
+              onCheckedChange={(soundEnabled) => updateSettings({ soundEnabled })}
+            />
+          </Row>
+          <Row label="Vektsteg">
+            <Segmented
+              className="w-[11rem]"
+              value={String(settings.weightStepKg) as "1.25" | "2.5" | "5"}
+              onChange={(v) => updateSettings({ weightStepKg: Number(v) })}
+              options={[
+                { value: "1.25", label: "1,25" },
+                { value: "2.5", label: "2,5" },
+                { value: "5", label: "5" },
+              ]}
+            />
+          </Row>
+          <Row label="Pause mellom sett" last>
+            <Input
+              type="number"
+              min={0}
+              step={15}
+              className="h-9 w-16 border-0 bg-transparent px-0 text-right text-[13.5px] tabular text-muted-foreground shadow-none focus-visible:outline-none"
+              value={settings.defaultStrengthRestSec}
+              onChange={(e) =>
+                updateSettings({
+                  defaultStrengthRestSec: Math.max(0, Number(e.target.value) || 90),
+                })
+              }
+            />
+          </Row>
+        </div>
+
+        <p className="px-1 text-sm text-muted-foreground">
+          {logCount > 0
+            ? `${logCount} øvelser med lagret progresjonshistorikk`
+            : "Ingen styrkehistorikk ennå"}
+        </p>
+
+        <div className="space-y-2.5 rounded-[18px] border border-border bg-card p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-[15px] font-semibold">Pulssoner — Olympiatoppen</h2>
+              <p className="text-xs text-muted-foreground">Intensitetsskala 2024</p>
             </div>
-
-            <div className="space-y-2">
-              <Label>Fartsenhet</Label>
-              <Segmented
-                value={settings.speedUnit}
-                onChange={(speedUnit) => updateSettings({ speedUnit })}
-                options={[
-                  { value: "kmh", label: "km/t" },
-                  { value: "pace", label: "min/km" },
-                ]}
-              />
-            </div>
-
-            <div className="flex items-center justify-between gap-3">
-              <Label htmlFor="sound">Lydvarsler under økt</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="custom-zones" className="text-xs text-muted-foreground">
+                Egne
+              </Label>
               <Switch
-                id="sound"
-                checked={settings.soundEnabled}
-                onCheckedChange={(soundEnabled) => updateSettings({ soundEnabled })}
+                id="custom-zones"
+                checked={settings.customZones}
+                onCheckedChange={(customZones) => updateSettings({ customZones })}
               />
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="space-y-4 py-4">
-            <div>
-              <h2 className="font-display text-lg">Styrkeprogrammer</h2>
-              <p className="text-xs text-muted-foreground">
-                Progresjon og standarder for tilpasning
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="wstep">Vektsteg (kg)</Label>
-              <Segmented
-                value={String(settings.weightStepKg) as "1.25" | "2.5" | "5"}
-                onChange={(v) => updateSettings({ weightStepKg: Number(v) })}
-                options={[
-                  { value: "1.25", label: "1,25" },
-                  { value: "2.5", label: "2,5" },
-                  { value: "5", label: "5" },
-                ]}
-              />
-              <p className="text-xs text-muted-foreground">
-                Brukes ved +/− på øvelser og automatisk progresjon etter fullførte sett.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="srest">Standard pause mellom sett (sek)</Label>
-              <Input
-                id="srest"
-                type="number"
-                min={0}
-                step={15}
-                value={settings.defaultStrengthRestSec}
-                onChange={(e) =>
-                  updateSettings({
-                    defaultStrengthRestSec: Math.max(0, Number(e.target.value) || 90),
-                  })
-                }
-              />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {logCount > 0
-                ? `${logCount} øvelser med lagret progresjonshistorikk`
-                : "Ingen styrkehistorikk ennå — fullfør en økt for å låse opp progresjonsforslag"}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="py-4">
-            <div className="mb-1 flex items-start justify-between gap-3">
-              <div>
-                <h2 className="font-display text-lg">Dine pulssoner</h2>
-                <p className="text-xs text-muted-foreground">
-                  Olympiatoppens intensitetsskala (2024)
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <Label htmlFor="custom-zones" className="text-xs">
-                  Egne soner
-                </Label>
-                <Switch
-                  id="custom-zones"
-                  checked={settings.customZones}
-                  onCheckedChange={(customZones) => updateSettings({ customZones })}
-                />
-              </div>
-            </div>
-
-            <div className="mt-4 space-y-4">
-              {([1, 2, 3, 4, 5] as const).map((z) => {
-                const range = zoneRange(z, settings.maxHr, lows);
-                return (
-                  <div key={z} className="space-y-1">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="font-medium">
-                        Sone {z} · {ZONE_META[z].name}
-                      </span>
-                      <span className="shrink-0 font-mono text-sm tabular">
-                        {range.low}–{range.high}
-                      </span>
+          </div>
+          <div className="space-y-2.5 pt-1">
+            {([1, 2, 3, 4, 5] as const).map((z) => {
+              const range = zoneRange(z, settings.maxHr, lows);
+              const width = `${Math.min(100, Math.max(12, range.highPct - 40))}%`;
+              return (
+                <div key={z} className="space-y-1">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-6 font-mono text-[11.5px] text-muted-foreground">
+                      S{z}
+                    </span>
+                    <div className="h-2 flex-1 overflow-hidden rounded bg-muted">
+                      <div className={cn("h-2 rounded", zoneBarColor[z])} style={{ width }} />
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {range.lowPct}–{range.highPct} % av makspuls · Borg {ZONE_META[z].borg}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{ZONE_META[z].breathing}</p>
-                    {settings.customZones && z < 5 && (
-                      <div className="pt-1">
-                        <Label className="text-xs" htmlFor={`zone-low-${z}`}>
-                          Sone {z} nedre grense (%)
-                        </Label>
-                        <Input
-                          id={`zone-low-${z}`}
-                          type="number"
-                          min={40}
-                          max={99}
-                          className="mt-1 h-9"
-                          value={settings.zoneLowPct[z - 1]}
-                          onChange={(e) => {
-                            const next = [...settings.zoneLowPct] as SettingsZones;
-                            next[z - 1] = Number(e.target.value) || next[z - 1];
-                            updateSettings({ zoneLowPct: next });
-                          }}
-                        />
-                      </div>
-                    )}
+                    <span className="shrink-0 font-mono text-[11.5px] tabular text-muted-foreground">
+                      {range.low}–{range.high}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
-
-            {settings.customZones && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-4"
-                onClick={() =>
-                  updateSettings({
-                    zoneLowPct: [...OLYMPIATOPPEN_ZONE_LOW],
-                    customZones: false,
-                  })
-                }
-              >
-                Tilbakestill til Olympiatoppen
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="space-y-3 py-4">
-            <h2 className="font-display text-lg">Data</h2>
-            <p className="text-sm text-muted-foreground">
-              Alt lagres lokalt i nettleseren på denne enheten. Ingen konto kreves for å trene.
-            </p>
-            <Button type="button" variant="outline" onClick={() => resetSeeds()}>
-              Gjenopprett startpakke-maler
+                  <p className="pl-8 text-[11px] text-muted-foreground">
+                    {ZONE_META[z].name} · {range.lowPct}–{range.highPct} %
+                  </p>
+                  {settings.customZones && z < 5 && (
+                    <div className="pl-8 pt-0.5">
+                      <Input
+                        type="number"
+                        min={40}
+                        max={99}
+                        className="h-9"
+                        value={settings.zoneLowPct[z - 1]}
+                        onChange={(e) => {
+                          const next = [...settings.zoneLowPct] as SettingsZones;
+                          next[z - 1] = Number(e.target.value) || next[z - 1];
+                          updateSettings({ zoneLowPct: next });
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {settings.customZones && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                updateSettings({
+                  zoneLowPct: [...OLYMPIATOPPEN_ZONE_LOW],
+                  customZones: false,
+                })
+              }
+            >
+              Tilbakestill til Olympiatoppen
             </Button>
-          </CardContent>
-        </Card>
+          )}
+        </div>
 
-        <Card>
-          <CardContent className="flex items-center justify-between gap-3 py-4">
-            <div>
-              <h2 className="font-display text-lg">Konto</h2>
-              <p className="text-sm text-muted-foreground">Valgfritt — synk kommer senere</p>
-            </div>
-            {isPending ? (
-              <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
-            ) : (
-              <>
-                <SignedIn>
-                  <UserButton />
-                </SignedIn>
-                <SignedOut>
-                  <Button asChild size="sm" variant="outline">
-                    <Link to="/login">Logg inn</Link>
-                  </Button>
-                </SignedOut>
-              </>
-            )}
-            {user && <p className="sr-only">Innlogget som {user.displayName}</p>}
-          </CardContent>
-        </Card>
+        <div className="space-y-3 rounded-[18px] border border-border bg-card p-4">
+          <h2 className="text-[15px] font-semibold">Data</h2>
+          <p className="text-sm text-muted-foreground">
+            Alt lagres lokalt i nettleseren på denne enheten.
+          </p>
+          <Button type="button" variant="outline" onClick={() => resetSeeds()}>
+            Gjenopprett startpakke-maler
+          </Button>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 rounded-[18px] border border-border bg-card p-4">
+          <div>
+            <h2 className="text-[15px] font-semibold">Konto</h2>
+            <p className="text-sm text-muted-foreground">Valgfritt</p>
+          </div>
+          {isPending ? (
+            <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
+          ) : (
+            <>
+              <SignedIn>
+                <UserButton />
+              </SignedIn>
+              <SignedOut>
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/login">Logg inn</Link>
+                </Button>
+              </SignedOut>
+            </>
+          )}
+          {user && <p className="sr-only">Innlogget som {user.displayName}</p>}
+        </div>
       </div>
     </AppShell>
+  );
+}
+
+function Row({
+  label,
+  children,
+  last = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  last?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex min-h-[52px] items-center justify-between gap-3",
+        !last && "border-b border-border",
+      )}
+    >
+      <span className="whitespace-nowrap text-[14.5px]">{label}</span>
+      <div className="flex shrink-0 items-center">{children}</div>
+    </div>
   );
 }
 

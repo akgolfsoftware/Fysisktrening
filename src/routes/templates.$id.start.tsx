@@ -1,10 +1,7 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Play } from "lucide-react";
 import { useMemo } from "react";
 import { AppShell } from "@/components/layout/AppShell";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   ENV_LABEL,
   SPORT_LABEL,
@@ -14,6 +11,7 @@ import {
   totalTemplateSeconds,
 } from "@/lib/intervall/format";
 import { useIntervallStore } from "@/lib/intervall/store";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/templates/$id/start")({ component: StartTemplatePage });
 
@@ -33,10 +31,12 @@ function StartTemplatePage() {
   if (!template) {
     return (
       <AppShell active="home" hideNav>
-        <p className="text-muted-foreground">Fant ikke malen.</p>
-        <Button asChild className="mt-4">
-          <Link to="/">Tilbake</Link>
-        </Button>
+        <div className="space-y-4 py-8 text-center">
+          <p className="font-display text-xl">Fant ikke malen.</p>
+          <Button asChild variant="outline">
+            <Link to="/">← Økter</Link>
+          </Button>
+        </div>
       </AppShell>
     );
   }
@@ -52,71 +52,78 @@ function StartTemplatePage() {
 
   const total = totalTemplateSeconds(template.series, template.sport);
   const resumeSame = active && active.templateId === template.id;
+  const sportTone =
+    template.sport === "strength"
+      ? "text-strength"
+      : template.sport === "mobility"
+        ? "text-mobility"
+        : "text-running";
+
+  const lastCompleted = sessions
+    .filter((s) => s.status === "completed" && s.templateId === template.id)
+    .sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0))[0];
 
   return (
     <AppShell active="home" hideNav>
-      <div className="space-y-6">
-        <header className="flex items-center gap-3">
-          <Button asChild size="icon" variant="ghost" aria-label="Tilbake">
-            <Link to="/">
-              <ArrowLeft />
-            </Link>
-          </Button>
-          <div>
-            <div className="mb-1 flex flex-wrap items-center gap-2">
-              <Badge
-                variant={
-                  template.sport === "strength"
-                    ? "strength"
-                    : template.sport === "mobility"
-                      ? "mobility"
-                      : "running"
-                }
-              >
-                {SPORT_LABEL[template.sport]}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                {ENV_LABEL[template.environment]}
-              </span>
-            </div>
-            <h1 className="font-display text-2xl font-medium">{template.name}</h1>
-          </div>
+      <div className="flex min-h-[70dvh] flex-col space-y-3.5">
+        <Link to="/" className="inline-flex min-h-11 items-center text-sm text-muted-foreground">
+          ← Økter
+        </Link>
+
+        <header className="space-y-1">
+          <p className={cn("label-caps", sportTone)}>
+            {SPORT_LABEL[template.sport]} · {ENV_LABEL[template.environment]}
+          </p>
+          <h1 className="font-display text-[26px] leading-tight">{template.name}</h1>
+          <p className="text-[13px] tabular text-muted-foreground">
+            {lastCompleted?.completedAt
+              ? `Sist fullført ${new Date(lastCompleted.completedAt).toLocaleDateString("nb-NO", { day: "numeric", month: "long" })} · ${formatDurationLong(Math.round(((lastCompleted.completedAt ?? 0) - lastCompleted.startedAt) / 1000))}`
+              : template.sport === "strength"
+                ? `${template.series.length} øvelser · ${countDrags(template.series)} sett · ca. ${formatDurationLong(total)}`
+                : `${countDrags(template.series)} drag · ca. ${formatDurationLong(total)}`}
+          </p>
         </header>
 
-        <Card>
-          <CardContent className="space-y-1 py-4">
-            <p className="text-sm text-muted-foreground">
-              {template.sport === "strength"
-                ? `${template.series.length} øvelser · ${countDrags(template.series)} sett`
-                : `${countDrags(template.series)} drag · ca. ${formatDurationLong(total)}`}
-            </p>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-2">
-          <h2 className="font-display text-lg">Oversikt</h2>
+        <div className="rounded-[20px] border border-border bg-card px-4 py-1">
           {template.series.map((ser, i) => (
-            <Card key={ser.id}>
-              <CardContent className="py-3">
-                <p className="font-medium">
+            <div
+              key={ser.id}
+              className={cn(
+                "flex items-center justify-between gap-3 py-3",
+                i < template.series.length - 1 && "border-b border-border",
+              )}
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">
                   {template.sport === "strength"
                     ? ser.exerciseName || `Øvelse ${i + 1}`
                     : `Serie ${i + 1}`}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs tabular text-muted-foreground">
                   {template.sport === "strength"
-                    ? `${ser.reps} × ${ser.targetReps ?? 8} reps${ser.targetWeightKg ? ` @ ${ser.targetWeightKg} kg` : ""} · pause ${formatMmSs(ser.restSec)}`
-                    : `${ser.reps} × ${formatMmSs(ser.durationSec)} · pause ${formatMmSs(ser.restSec)}`}
+                    ? `${ser.reps}×${ser.targetReps ?? 8}${ser.targetWeightKg != null ? ` @ ${ser.targetWeightKg} kg` : ""}`
+                    : `${ser.reps} × ${formatMmSs(ser.durationSec)}`}
                 </p>
-              </CardContent>
-            </Card>
+              </div>
+              <p className="shrink-0 text-[13px] tabular text-muted-foreground">
+                {template.sport === "strength"
+                  ? `${ser.reps} sett`
+                  : formatMmSs(ser.durationSec)}
+              </p>
+            </div>
           ))}
         </div>
 
-        <Button size="lg" className="h-14 w-full text-base" onClick={begin}>
-          <Play className="fill-current" />
-          {resumeSame ? "Fortsett økt" : "Start økt"}
-        </Button>
+        <div className="mt-auto pt-4">
+          <Button
+            size="lg"
+            variant={template.sport === "strength" ? "strength" : "default"}
+            className="w-full rounded-[14px]"
+            onClick={begin}
+          >
+            {resumeSame ? "Fortsett økt" : "Start økt"}
+          </Button>
+        </div>
       </div>
     </AppShell>
   );
