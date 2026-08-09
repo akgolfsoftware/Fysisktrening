@@ -3,17 +3,19 @@
  * Vite plugin (scripts/grok-pwa-plugin.mjs) and the deployed-app Nitro
  * middleware (server/middleware/grok-pwa.ts). Plain ESM so `node --test` and
  * the Nitro bundler can both consume it.
+ *
+ * Iron Mile branding applied for this app.
  */
 
-export const DEFAULT_APP_NAME = "Grok App";
+export const DEFAULT_APP_NAME = "Iron Mile";
 
 export function escapeHtml(value) {
   return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+    .replaceAll("&", "\u0026amp;")
+    .replaceAll("<", "\u0026lt;")
+    .replaceAll(">", "\u0026gt;")
+    .replaceAll('"', "\u0026quot;")
+    .replaceAll("'", "\u0026#39;");
 }
 
 /**
@@ -36,6 +38,9 @@ export function appNameFromHost(hostHeader) {
   }
   const slug = host.split(".")[0] ?? "";
   if (!slug || slug === "www" || !/^[a-z0-9-]{1,63}$/.test(slug)) {
+    return DEFAULT_APP_NAME;
+  }
+  if (slug === "fysisktrening" || slug === "iron-mile" || slug === "ironmile") {
     return DEFAULT_APP_NAME;
   }
   return (
@@ -93,14 +98,36 @@ export function renderWebManifest(hostHeader) {
   return JSON.stringify(
     {
       name,
-      short_name: name,
+      short_name: name.length > 12 ? "Iron Mile" : name,
+      description: "Styrke, intervaller og bevegelighet",
       id: "/",
       start_url: "/",
       scope: "/",
       display: "standalone",
-      background_color: "#000000",
-      theme_color: "#000000",
+      orientation: "portrait-primary",
+      background_color: "#efece6",
+      theme_color: "#efece6",
+      lang: "nb",
+      categories: ["health", "fitness", "sports"],
       icons: [
+        {
+          src: "/icon-192.png",
+          sizes: "192x192",
+          type: "image/png",
+          purpose: "any",
+        },
+        {
+          src: "/icon-512.png",
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "any",
+        },
+        {
+          src: "/icon-192.png",
+          sizes: "192x192",
+          type: "image/png",
+          purpose: "maskable",
+        },
         {
           src: "/__grok/icon-180.png",
           sizes: "180x180",
@@ -118,16 +145,16 @@ export function grokPwaHeadTags(appName = DEFAULT_APP_NAME) {
     // Standalone display comes from the manifest ("display": "standalone");
     // the legacy *-web-app-capable metas it replaces are deliberately absent.
     ["manifest", '<link rel="manifest" href="/__grok/manifest.webmanifest">'],
-    ["apple-touch-icon", '<link rel="apple-touch-icon" href="/__grok/icon-180.png">'],
+    ["apple-touch-icon", '<link rel="apple-touch-icon" href="/icon-180.png">'],
     [
       "apple-mobile-web-app-title",
       `<meta name="apple-mobile-web-app-title" content="${escapeHtml(appName)}">`,
     ],
     [
       "apple-mobile-web-app-status-bar-style",
-      '<meta name="apple-mobile-web-app-status-bar-style" content="black">',
+      '<meta name="apple-mobile-web-app-status-bar-style" content="default">',
     ],
-    ["theme-color", '<meta name="theme-color" content="#000000">'],
+    ["theme-color", '<meta name="theme-color" content="#efece6">'],
   ];
 }
 
@@ -136,7 +163,7 @@ export function injectGrokPwaHead(html, appName = DEFAULT_APP_NAME) {
   const missing = grokPwaHeadTags(appName)
     .filter(([key]) => {
       if (key === "manifest") return !html.includes('href="/__grok/manifest.webmanifest"');
-      if (key === "apple-touch-icon") return !html.includes('href="/__grok/icon-180.png"');
+      if (key === "apple-touch-icon") return !html.includes('rel="apple-touch-icon"');
       return !html.includes(`name="${key}"`);
     })
     .map(([, tag]) => tag);

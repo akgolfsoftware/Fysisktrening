@@ -2,6 +2,7 @@ export type Sport = "running" | "strength" | "mobility";
 export type Environment = "treadmill" | "outdoor" | "gym" | "home";
 export type SpeedUnit = "kmh" | "pace";
 export type SessionStatus = "active" | "completed" | "aborted";
+export type SessionFeeling = "easy" | "ok" | "hard";
 
 export type BlockKind = "work" | "rest" | "warmup" | "cooldown";
 
@@ -113,4 +114,6 @@ export type Session = {
   completedSets: number;
   /** Actual logged weight/reps per phase (strength) */
   setLogs?: Record<string, { weightKg?: number; reps?: number }>;
+  /** How the session felt (set on complete screen) */
+  feeling?: SessionFeeling;
 };

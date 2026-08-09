@@ -2,6 +2,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { IronMileMark } from "@/components/brand/IronMileMark";
 import { AppShell } from "@/components/layout/AppShell";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { Button } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/segmented";
 import { TemplateCard } from "@/components/workout/TemplateCard";
@@ -80,7 +81,6 @@ function HomePage() {
   return (
     <AppShell active="home">
       <div className="space-y-3.5">
-        {/* Hero — design 1b */}
         <div className="iron-hero -mx-4 space-y-3.5 px-5 pb-4 pt-2">
           <IronMileMark withWordmark size="md" />
           <div className="flex items-end justify-between gap-3">
@@ -95,6 +95,8 @@ function HomePage() {
             </Button>
           </div>
         </div>
+
+        <InstallPrompt />
 
         {active && (
           <div className="rounded-[20px] border border-primary/25 bg-card p-4 shadow-[var(--shadow-soft)]">

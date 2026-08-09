@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Minus, Pause, Play, Plus, SkipForward } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { SessionComplete } from "@/components/workout/SessionComplete";
 import { ENV_LABEL, SPORT_LABEL, formatMmSs, formatSpeed } from "@/lib/intervall/format";
 import { playBeep } from "@/lib/intervall/sound";
 import { useIntervallStore } from "@/lib/intervall/store";
@@ -42,6 +43,25 @@ export function SessionRunner({ sessionId }: { sessionId: string }) {
     setActualReps(phase.targetReps ?? 0);
     setActualWeight(phase.targetWeightKg ?? 0);
   }, [phase?.id]);
+
+  // Keep screen awake during timed work when supported
+  useEffect(() => {
+    if (!session || session.status !== "active" || phase?.manual || paused) return;
+    let lock: WakeLockSentinel | null = null;
+    const request = async () => {
+      try {
+        if ("wakeLock" in navigator) {
+          lock = await navigator.wakeLock.request("screen");
+        }
+      } catch {
+        /* unsupported / denied */
+      }
+    };
+    void request();
+    return () => {
+      void lock?.release();
+    };
+  }, [session?.status, session?.phaseIndex, phase?.manual, paused]);
 
   useEffect(() => {
     if (!session || session.status !== "active" || !phase || phase.manual || paused) {
@@ -84,7 +104,7 @@ export function SessionRunner({ sessionId }: { sessionId: string }) {
     if (nextIndex >= s.phases.length) {
       if (settings.soundEnabled) playBeep("done");
       completeSession(s.id);
-      void navigate({ to: "/history/$id", params: { id: s.id } });
+      // Stay on /session/$id — SessionComplete renders when status is completed
       return;
     }
     const next = s.phases[nextIndex]!;
@@ -99,7 +119,7 @@ export function SessionRunner({ sessionId }: { sessionId: string }) {
     });
   }
 
-  if (!session || !phase) {
+  if (!session) {
     return (
       <div className="space-y-4 py-12 text-center">
         <p className="font-display text-xl">Fant ikke økten.</p>
@@ -109,14 +129,23 @@ export function SessionRunner({ sessionId }: { sessionId: string }) {
   }
 
   if (session.status === "completed") {
+    return <SessionComplete session={session} />;
+  }
+
+  if (session.status === "aborted") {
     return (
-      <div className="space-y-4 py-8 text-center">
-        <p className="label-caps text-strength">Fullført</p>
-        <h1 className="font-display text-3xl">Økt fullført</h1>
-        <p className="text-muted-foreground">{session.templateName}</p>
-        <Button onClick={() => navigate({ to: "/history/$id", params: { id: session.id } })}>
-          Se oppsummering
-        </Button>
+      <div className="space-y-4 py-12 text-center">
+        <p className="font-display text-xl">Økten ble avbrutt</p>
+        <Button onClick={() => navigate({ to: "/" })}>Tilbake til økter</Button>
+      </div>
+    );
+  }
+
+  if (!phase) {
+    return (
+      <div className="space-y-4 py-12 text-center">
+        <p className="font-display text-xl">Ingen faser i økten.</p>
+        <Button onClick={() => navigate({ to: "/" })}>Tilbake</Button>
       </div>
     );
   }
@@ -280,7 +309,8 @@ export function SessionRunner({ sessionId }: { sessionId: string }) {
             </Button>
             <div className="flex gap-2.5">
               <Button variant="outline" className="min-h-12 flex-1 rounded-[14px]" disabled>
-                Pause {formatMmSs(
+                Pause{" "}
+                {formatMmSs(
                   session.phases[session.phaseIndex + 1]?.kind === "rest"
                     ? session.phases[session.phaseIndex + 1]!.durationSec
                     : 0,

@@ -1,6 +1,8 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { Download } from "lucide-react";
 import { IronMileMark } from "@/components/brand/IronMileMark";
 import { AppShell } from "@/components/layout/AppShell";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,11 +29,34 @@ function SettingsPage() {
   const settings = useIntervallStore((s) => s.settings);
   const updateSettings = useIntervallStore((s) => s.updateSettings);
   const resetSeeds = useIntervallStore((s) => s.resetSeeds);
+  const templates = useIntervallStore((s) => s.templates);
+  const sessions = useIntervallStore((s) => s.sessions);
   const exerciseLogs = useIntervallStore((s) => s.exerciseLogs);
   const { user, isPending } = useCurrentUserState();
 
   const lows = settings.customZones ? settings.zoneLowPct : OLYMPIATOPPEN_ZONE_LOW;
   const logCount = Object.keys(exerciseLogs).length;
+
+  function exportBackup() {
+    const payload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      app: BRAND.name,
+      templates,
+      sessions,
+      settings,
+      exerciseLogs,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `iron-mile-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <AppShell active="settings">
@@ -47,6 +72,8 @@ function SettingsPage() {
             </p>
           </div>
         </div>
+
+        <InstallPrompt />
 
         <div className="overflow-hidden rounded-[18px] border border-border bg-card px-4">
           <Row label="Makspuls">
@@ -194,9 +221,14 @@ function SettingsPage() {
           <p className="text-sm text-muted-foreground">
             Alt lagres lokalt i nettleseren på denne enheten.
           </p>
-          <Button type="button" variant="outline" onClick={() => resetSeeds()}>
-            Gjenopprett startpakke-maler
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button type="button" variant="outline" onClick={exportBackup}>
+              <Download className="size-4" /> Eksporter backup
+            </Button>
+            <Button type="button" variant="outline" onClick={() => resetSeeds()}>
+              Gjenopprett startpakke-maler
+            </Button>
+          </div>
         </div>
 
         <div className="flex items-center justify-between gap-3 rounded-[18px] border border-border bg-card p-4">
